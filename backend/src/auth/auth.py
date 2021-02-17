@@ -1,4 +1,5 @@
 import json
+import traceback
 from flask import request, _request_ctx_stack, abort
 from functools import wraps
 from jose import jwt
@@ -128,7 +129,7 @@ def verify_decode_jwt(token):
     if 'kid' not in unverified_header:
         raise AuthError(
             {
-                'code': 'invalid_heaer',
+                'code': 'invalid_header',
                 'description': 'Authorization header is not right.'
             }, 401)
 
@@ -203,7 +204,9 @@ def requires_auth(permission=''):
             try:
                 payload = verify_decode_jwt(token)
                 # print("Payload: " + payload)
-            except:
+            except Exception as e:
+                traceback.print_exc()
+                print(e)
                 abort(401)
 
             check_permissions(permission, payload)

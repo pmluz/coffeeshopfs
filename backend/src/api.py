@@ -16,7 +16,7 @@ CORS(app)
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 '''
 
-db_drop_and_create_all()
+# db_drop_and_create_all()
 
 ## ROUTES
 '''
@@ -55,7 +55,7 @@ def get_drinks():
 
 @app.route('/drinks-detail', methods=['GET'])
 @requires_auth('get:drinks-detail')
-def get_drink_detail(payload):
+def get_drinks_detail(payload):
     try:
         selection = Drink.query.order_by(Drink.id).all()
 
@@ -64,7 +64,8 @@ def get_drink_detail(payload):
             'drinks': [drink.long() for drink in selection]
         }), 200
 
-    except:
+    except Exception as e:
+        print(e)
         abort(401)
 
 
@@ -74,7 +75,7 @@ def get_drink_detail(payload):
 #     drinks = list(map(Drink.long, Drink.query.all()))
 #     result = {"success": True, "drinks": drinks}
 #     return jsonify(result)
-'''
+    '''
 @TODO implement endpoint
     POST /drinks
         it should create a new row in the drinks table
@@ -94,17 +95,18 @@ def create_drinks(payload):
     new_recipe = body.get('recipe')
 
     try:
-        drink = Drink(title=new_title, recipe=json.dumps(new_recipe))
-        drink.insert()
+        new_drink = Drink(title=new_title, recipe=new_recipe)
+        # new_drink = Drink(title=new_title, recipe=json.dumps(new_recipe))
+        new_drink.insert()
 
-        print("Drink title: " + drink.title)
+        print("Drink title: " + new_drink.title)
 
-        selection = Drink.query.all()
-        drinks = [drink.long() for drink in selection]
-        if len(drinks) == 0:
-            abort(404)
+        # selection = Drink.query.all()
+        # drinks = [drink.long() for drink in selection]
+        # if len(drinks) == 0:
+        #     abort(404)
 
-        return jsonify({'success': 'True', 'drinks': drink.long()}), 200
+        return jsonify({'success': True, 'drinks': new_drink.long()}), 200
     except:
         abort(401)
 
@@ -210,6 +212,13 @@ def not_found(error):
     }), 404
 
 
+# @app.errorhandler(401)
+# def unathorized(error):
+#     return jsonify({
+#         'success': False,
+#         'error': 401,
+#         'message': 'unathorized'
+#     }), 401
 '''
 @TODO implement error handler for AuthError
     error handler should conform to general task above 
@@ -223,3 +232,14 @@ def auth_error(error):
         'error': error.status_code,
         'message': error.error['description']
     }), error.status_code
+
+
+# @app.errorhandler(AuthError)
+# def autherror(error):
+#     error_details = error.error
+#     error_status_code = error.status_code
+#     return jsonify({
+#         'success': False,
+#         'error': error_status_code,
+#         'message': error_details['description']
+#     }), error_status_code
