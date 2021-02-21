@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify, abort
 from sqlalchemy import exc
 import json
 from flask_cors import CORS
+import traceback
 
 from .database.models import db_drop_and_create_all, setup_db, Drink
 from .auth.auth import AuthError, requires_auth
@@ -16,7 +17,7 @@ CORS(app)
 !! NOTE THIS MUST BE UNCOMMENTED ON FIRST RUN
 '''
 
-# db_drop_and_create_all()
+db_drop_and_create_all()
 
 ## ROUTES
 '''
@@ -36,7 +37,7 @@ def get_drinks():
 
         return jsonify({
             'success': True,
-            'drinks': [drink.short() for drink in selection]
+            'drinks': [drink.long() for drink in selection]
         }), 200
 
     except:
@@ -64,17 +65,14 @@ def get_drinks_detail(payload):
             'drinks': [drink.long() for drink in selection]
         }), 200
 
+        # drinks = list(map(Drink.long, Drink.query.all()))
+
+        # return jsonify({'success': True, 'drinks': drinks}), 200
+
     except Exception as e:
-        print(e)
-        abort(401)
-
-
-# @app.route("/drinks-detail", methods=['GET'])
-# @requires_auth("get:drinks-detail")
-# def get_drinks_detail(token):
-#     drinks = list(map(Drink.long, Drink.query.all()))
-#     result = {"success": True, "drinks": drinks}
-#     return jsonify(result)
+        print('Error while doing something:', e)
+        traceback.print_exc()
+        # abort(401)
     '''
 @TODO implement endpoint
     POST /drinks
@@ -90,23 +88,15 @@ def get_drinks_detail(payload):
 @requires_auth('post:drinks')
 def create_drinks(payload):
     body = request.get_json()
-
     new_title = body.get('title')
     new_recipe = body.get('recipe')
 
     try:
-        new_drink = Drink(title=new_title, recipe=new_recipe)
-        # new_drink = Drink(title=new_title, recipe=json.dumps(new_recipe))
+        new_drink = Drink(title=new_title, recipe=json.dumps(new_recipe))
         new_drink.insert()
 
-        print("Drink title: " + new_drink.title)
+        return jsonify({'success': True, 'drinks': [new_drink.long()]}), 200
 
-        # selection = Drink.query.all()
-        # drinks = [drink.long() for drink in selection]
-        # if len(drinks) == 0:
-        #     abort(404)
-
-        return jsonify({'success': True, 'drinks': new_drink.long()}), 200
     except:
         abort(401)
 
@@ -129,21 +119,29 @@ def create_drinks(payload):
 def update_drink(payload, id):
     try:
         body = request.get_json()
+        new_title = body.get('title', None)
+        new_recipe = body.get('recipe', None)
+
         drink = Drink.query.filter(Drink.id == id).one_or_none()
 
         if drink is None:
             abort(404)
 
-        if 'title' in body:
-            drink.title = body.get('title')
-        if 'recipe' in body:
-            drink.recipe = json.dumps(body.get('recipe'))
+        drink.title = new_title
+        drink.recipe = json.dumps(new_recipe)
+
+        # if 'title' in body:
+        #     drink.title = new_title
+        # if 'recipe' in body:
+        #     drink.recipe = json.dumps(new_recipe)
 
         drink.update()
 
-        return jsonify({'success': 'True', 'drinks': drink.long()}), 200
+        return jsonify({'success': 'True', 'drinks': [drink.long()]})
 
-    except:
+    except Exception as e:
+        print('Error while doing something:', e)
+        traceback.print_exc()
         abort(401)
 
 
@@ -212,13 +210,15 @@ def not_found(error):
     }), 404
 
 
-# @app.errorhandler(401)
-# def unathorized(error):
-#     return jsonify({
-#         'success': False,
-#         'error': 401,
-#         'message': 'unathorized'
-#     }), 401
+@app.errorhandler(401)
+def unathorized(error):
+    return jsonify({
+        'success': False,
+        'error': 401,
+        'message': 'unathorized'
+    }), 401
+
+
 '''
 @TODO implement error handler for AuthError
     error handler should conform to general task above 
@@ -232,14 +232,3 @@ def auth_error(error):
         'error': error.status_code,
         'message': error.error['description']
     }), error.status_code
-
-
-# @app.errorhandler(AuthError)
-# def autherror(error):
-#     error_details = error.error
-#     error_status_code = error.status_code
-#     return jsonify({
-#         'success': False,
-#         'error': error_status_code,
-#         'message': error_details['description']
-#     }), error_status_code

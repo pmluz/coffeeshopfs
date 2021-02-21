@@ -66,6 +66,7 @@ def get_token_auth_header():
             }, 401)
 
     token = header_parts[1]
+    # print("TOKEN: " + token)
     return token
     # raise Exception('Not Implemented')
 
@@ -82,26 +83,38 @@ def get_token_auth_header():
     return true otherwise
 '''
 
-
 # makes sure that that payload has 'permission' key
+# def check_permissions(permission, payload):
+#     if 'permissions' not in payload:
+#         raise AuthError(
+#             {
+#                 'code': 'permissions_missing',
+#                 'description': 'Permissions is not included in JWT.'
+#             }, 400)
+
+#     if permission not in payload['permissions']:
+#         raise AuthError(
+#             {
+#                 'code': 'permission_missing',
+#                 'description': 'Permissions not found.'
+#             }, 403)
+
+#     return True
+
+
 def check_permissions(permission, payload):
     if 'permissions' not in payload:
-        raise Exception('Not Implemented', 403)
-        # raise AuthError(
-        #     {
-        #         'code': 'permissions_missing',
-        #         'description': 'Permissions is expected.'
-        #     }, 403)
-
+        raise AuthError(
+            {
+                'code': 'permission_not_found',
+                'description': 'Permissions not included in JWT.'
+            }, 400)
     if permission not in payload['permissions']:
-        raise Exception('Not Implemented', 403)
-        # raise AuthError(
-        #     {
-        #         'code': 'permission_missing',
-        #         'description': 'Permission key is not in payload.'
-        #     }, 403)
-
-    # raise Exception('Not Implemented')
+        raise AuthError(
+            {
+                'code': 'unauthorized',
+                'description': 'Permission not found.'
+            }, 401)
     return True
 
 
@@ -146,8 +159,8 @@ def verify_decode_jwt(token):
         try:
             payload = jwt.decode(token,
                                  rsa_key,
-                                 ALGORITHMS,
-                                 API_AUDIENCE,
+                                 algorithms=ALGORITHMS,
+                                 audience=API_AUDIENCE,
                                  issuer='https://' + AUTH0_DOMAIN + '/')
             return payload
 
@@ -172,15 +185,15 @@ def verify_decode_jwt(token):
                 {
                     'code': 'invalid_header',
                     'description': 'Unable to parse authentication token.'
-                }, 400)
+                }, 401)
 
     raise AuthError(
         {
             'code': 'invalid_header',
             'description': 'Cannot find the correct authentication key.'
-        }, 400)
+        }, 401)
 
-    # raise Exception('Not Implemented')
+    # raise Exception('Not Implemented', 403)
 
 
 '''
@@ -200,14 +213,13 @@ def requires_auth(permission=''):
         @wraps(f)
         def wrapper(*args, **kwargs):
             token = get_token_auth_header()
-
-            try:
-                payload = verify_decode_jwt(token)
-                # print("Payload: " + payload)
-            except Exception as e:
-                traceback.print_exc()
-                print(e)
-                abort(401)
+            payload = verify_decode_jwt(token)
+            # try:
+            #     print("Payload: " + payload)
+            # except Exception as e:
+            #     traceback.print_exc()
+            #     print(e)
+            #     # abort(401)
 
             check_permissions(permission, payload)
             return f(payload, *args, **kwargs)
