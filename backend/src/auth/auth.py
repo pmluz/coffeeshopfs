@@ -83,24 +83,6 @@ def get_token_auth_header():
     return true otherwise
 '''
 
-# makes sure that that payload has 'permission' key
-# def check_permissions(permission, payload):
-#     if 'permissions' not in payload:
-#         raise AuthError(
-#             {
-#                 'code': 'permissions_missing',
-#                 'description': 'Permissions is not included in JWT.'
-#             }, 400)
-
-#     if permission not in payload['permissions']:
-#         raise AuthError(
-#             {
-#                 'code': 'permission_missing',
-#                 'description': 'Permissions not found.'
-#             }, 403)
-
-#     return True
-
 
 def check_permissions(permission, payload):
     if 'permissions' not in payload:
@@ -214,12 +196,6 @@ def requires_auth(permission=''):
         def wrapper(*args, **kwargs):
             token = get_token_auth_header()
             payload = verify_decode_jwt(token)
-            # try:
-            #     print("Payload: " + payload)
-            # except Exception as e:
-            #     traceback.print_exc()
-            #     print(e)
-            #     # abort(401)
 
             check_permissions(permission, payload)
             return f(payload, *args, **kwargs)

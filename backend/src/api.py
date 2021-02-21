@@ -65,14 +65,9 @@ def get_drinks_detail(payload):
             'drinks': [drink.long() for drink in selection]
         }), 200
 
-        # drinks = list(map(Drink.long, Drink.query.all()))
-
-        # return jsonify({'success': True, 'drinks': drinks}), 200
-
     except Exception as e:
         print('Error while doing something:', e)
         traceback.print_exc()
-        # abort(401)
     '''
 @TODO implement endpoint
     POST /drinks
@@ -129,11 +124,6 @@ def update_drink(payload, id):
 
         drink.title = new_title
         drink.recipe = json.dumps(new_recipe)
-
-        # if 'title' in body:
-        #     drink.title = new_title
-        # if 'recipe' in body:
-        #     drink.recipe = json.dumps(new_recipe)
 
         drink.update()
 
